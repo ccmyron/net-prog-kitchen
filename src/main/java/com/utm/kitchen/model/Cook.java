@@ -1,13 +1,73 @@
 package com.utm.kitchen.model;
 
-import lombok.AllArgsConstructor;
+import com.utm.kitchen.service.KitchenService;
 import lombok.Data;
+import lombok.SneakyThrows;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.URI;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @Data
-@AllArgsConstructor
-public class Cook {
+public class Cook implements Runnable {
     private int rank;
     private int proficiency;
     private String name;
     private String catchPhrase;
+    private boolean isCooking;
+    private Order orderTaken;
+
+    public Cook(int rank, int proficiency, String name, String catchPhrase, boolean isCooking) {
+        this.rank = rank;
+        this.proficiency = proficiency;
+        this.name = name;
+        this.catchPhrase = catchPhrase;
+        this.isCooking = isCooking;
+    }
+
+    private void prepareFood() {
+        this.isCooking = true;
+        orderTaken = KitchenService.getInstance().getOrderList().remove();
+    }
+
+    public void returnOrder(Order order) {
+        this.isCooking = false;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://localhost:9090/receive-order";
+
+        try {
+            URI uri = new URI(url);
+            HttpEntity<Order> requestEntity = new HttpEntity<>(order, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(uri, requestEntity, String.class);
+            System.out.println(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        this.orderTaken = null;
+        System.out.println(this.catchPhrase);
+    }
+
+    @SneakyThrows
+    @Override
+    public void run() {
+        while (KitchenService.getInstance().isKitchenRunning()) {
+            if (KitchenService.getInstance().getOrderList().isEmpty()) {
+                System.out.println(this.name + " is waiting for orders");
+                TimeUnit.SECONDS.sleep(5);
+            } else {
+                prepareFood();
+                TimeUnit.SECONDS.sleep(new Random().nextInt(20));
+                returnOrder(this.orderTaken);
+            }
+        }
+    }
 }
