@@ -18,7 +18,7 @@ public class KitchenService {
 
     @Getter private boolean isKitchenRunning;
 
-    @Getter private List<Food> menu = Menu.fillMenu();
+    @Getter private final List<Food> menu = Menu.fillMenu();
     @Getter @Setter private List<Cook> cooks = CookGenerator.generateCooks();
     @Getter private PriorityQueue<Order> orderList = new PriorityQueue<>(20, new OrderComparator());
 

@@ -3,6 +3,8 @@ package com.utm.kitchen.model;
 import com.utm.kitchen.service.KitchenService;
 import lombok.Data;
 import lombok.SneakyThrows;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -15,6 +17,9 @@ import java.util.concurrent.TimeUnit;
 
 @Data
 public class Cook implements Runnable {
+
+    Logger log = LogManager.getLogger(Cook.class);
+
     private int rank;
     private int proficiency;
     private String name;
@@ -47,13 +52,13 @@ public class Cook implements Runnable {
             URI uri = new URI(url);
             HttpEntity<Order> requestEntity = new HttpEntity<>(order, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(uri, requestEntity, String.class);
-            System.out.println(response);
+            log.info(response);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         this.orderTaken = null;
-        System.out.println(this.catchPhrase);
+        log.info(this.catchPhrase);
     }
 
     @SneakyThrows
@@ -61,7 +66,7 @@ public class Cook implements Runnable {
     public void run() {
         while (KitchenService.getInstance().isKitchenRunning()) {
             if (KitchenService.getInstance().getOrderList().isEmpty()) {
-                System.out.println(this.name + " is waiting for orders");
+                log.info("{} is waiting for orders", this.name);
                 TimeUnit.SECONDS.sleep(5);
             } else {
                 prepareFood();
