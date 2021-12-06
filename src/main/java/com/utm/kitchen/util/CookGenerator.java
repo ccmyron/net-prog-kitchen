@@ -14,27 +14,27 @@ public class CookGenerator {
         cooks.add(new Cook(1,
                 1,
                 "Andras Aurelius",
-                "Hello, my name is Andras, but friends call me to biti ebalo",
+                "Hello, my name is Andras",
                 false)
         );
-        cooks.add(new Cook(2,
-                2,
-                "Aline Charly",
-                "Woman moment",
-                false)
-        );
-        cooks.add(new Cook(3,
-                3,
-                "Rexanne Shulmanu-Ashared",
-                "Salamu alaykum",
-                false)
-        );
-        cooks.add(new Cook(3,
-                4,
-                "Alex Cornea",
-                "ia spati",
-                false)
-        );
+//        cooks.add(new Cook(2,
+//                2,
+//                "Aline Charly",
+//                "Woman moment",
+//                false)
+//        );
+//        cooks.add(new Cook(3,
+//                3,
+//                "Rexanne Shulmanu-Ashared",
+//                "Salamu alaykum",
+//                false)
+//        );
+//        cooks.add(new Cook(3,
+//                4,
+//                "Alex Cornea",
+//                "ia spati",
+//                false)
+//        );
 
         return cooks;
     }
