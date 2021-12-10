@@ -17,18 +17,18 @@ public class CookGenerator {
                 "Hello, my name is Andras",
                 false)
         );
-//        cooks.add(new Cook(2,
-//                2,
-//                "Aline Charly",
-//                "Woman moment",
-//                false)
-//        );
-//        cooks.add(new Cook(3,
-//                3,
-//                "Rexanne Shulmanu-Ashared",
-//                "Salamu alaykum",
-//                false)
-//        );
+        cooks.add(new Cook(2,
+                2,
+                "Aline Charly",
+                "Woman moment",
+                false)
+        );
+        cooks.add(new Cook(3,
+                3,
+                "Rexanne Shulmanu-Ashared",
+                "Salamu alaykum",
+                false)
+        );
 //        cooks.add(new Cook(3,
 //                4,
 //                "Alex Cornea",

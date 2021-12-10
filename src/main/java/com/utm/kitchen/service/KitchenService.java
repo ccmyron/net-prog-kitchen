@@ -32,6 +32,8 @@ public class KitchenService {
             new PriorityBlockingQueue<>(20, new OrderComparator());
     private final List<Apparatus> availableApparatuses =
             ApparatusGenerator.generateApparatus(Properties.STOVES, Properties.OVENS);
+    @Setter private int currentOrders = 0;
+    @Setter private int finishedOrders = 0;
 
     /* Private constructor to initialize the instance as a singleton */
     private KitchenService() {}

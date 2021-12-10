@@ -15,6 +15,7 @@ public class KitchenController {
         log.info("{} received", order);
         order.init();
         KitchenService.getInstance().addOrder(order);
+        KitchenService.getInstance().setCurrentOrders(KitchenService.getInstance().getCurrentOrders() + 1);
         return "Order received successfully and placed in queue!";
     }
 }

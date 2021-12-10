@@ -48,6 +48,16 @@ public class Order {
         return returnedFoods;
     }
 
+    public int getMaxComplexity() {
+        List<Food> foods = getFoodsByItemId();
+        int maxComplexity = 0;
+        for (Food food : foods) {
+            maxComplexity = Math.max(maxComplexity, food.getComplexity());
+        }
+
+        return maxComplexity;
+    }
+
     @SneakyThrows
     public void setFoodPrepared(Food item) {
         for (int itm : items) {

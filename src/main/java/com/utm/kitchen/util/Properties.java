@@ -6,7 +6,6 @@ import java.io.InputStream;
 
 public class Properties {
   public static int TIME_UNIT;
-  public static int COOKS;
   public static int OVENS;
   public static int STOVES;
 

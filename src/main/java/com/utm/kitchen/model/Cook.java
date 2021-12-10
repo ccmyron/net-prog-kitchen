@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.*;
 
 @Data
@@ -39,8 +40,28 @@ public class Cook implements Runnable {
         this.semaphore = new Semaphore(1);
     }
 
+    public void returnOrder(Order order) {
+        this.isCooking = false;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://localhost:9090/distribution";
+
+        try {
+            URI uri = new URI(url);
+            HttpEntity<Order> requestEntity = new HttpEntity<>(order, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(uri, requestEntity, String.class);
+            log.info(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        this.orderTaken = null;
+    }
+
     @SneakyThrows
-    private void cook(Food food) {
+    private void cook(Food food, CountDownLatch latch) {
         Apparatus apparatus = null;
 
         synchronized (KitchenService.getInstance()) {
@@ -62,27 +83,8 @@ public class Cook implements Runnable {
         if (apparatus != null) {
             apparatus.free();
         }
-    }
 
-    public void returnOrder(Order order) {
-        this.isCooking = false;
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        RestTemplate restTemplate = new RestTemplate();
-        String url = "http://localhost:9090/distribution";
-
-        try {
-            URI uri = new URI(url);
-            HttpEntity<Order> requestEntity = new HttpEntity<>(order, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(uri, requestEntity, String.class);
-            log.info(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        this.orderTaken = null;
-        log.info(this.catchPhrase);
+        latch.countDown();
     }
 
     @SneakyThrows
@@ -94,31 +96,38 @@ public class Cook implements Runnable {
 
         while (true) {
             Order order = orders.take();
-
+            log.info("{} is preparing order with id {}", this.name, order.getId());
             semaphore.acquire();
             Food food = order.fetchUnpreparedFood();
             semaphore.release();
 
             ExecutorService executorService = Executors.newFixedThreadPool(proficiency);
 
+            CountDownLatch latch = new CountDownLatch(proficiency);
+
             while (food != null) {
                 Food finalFood = food;
-                executorService.execute(() -> cook(finalFood));
+                executorService.execute(() -> cook(finalFood, latch));
                 semaphore.acquire();
                 order.setFoodPrepared(food);
                 semaphore.release();
                 food = order.fetchUnpreparedFood();
             }
 
+            latch.await();
+
             foundOrder = order;
 
+            KitchenService.getInstance().setFinishedOrders(KitchenService.getInstance().getFinishedOrders() + 1);
+
             Order finalFoundOrder = foundOrder;
-            Thread thread = new Thread(() -> returnOrder(finalFoundOrder));
-            thread.start();
+            returnOrder(finalFoundOrder);
 
             KitchenService.getInstance().removeOrder(foundOrder);
 
-            log.info(catchPhrase);
+//            log.info(catchPhrase);
+//            System.out.println("Current = " + KitchenService.getInstance().getCurrentOrders());
+//            System.out.println("Finished = " + KitchenService.getInstance().getFinishedOrders());
         }
     }
 }
