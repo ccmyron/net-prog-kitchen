@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,29 +35,6 @@ public class Order {
         }
     }
 
-    public List<Food> getFoodsByItemId() {
-        List<Food> foods = KitchenService.getInstance().getMenu();
-        List<Food> returnedFoods = new LinkedList<>();
-
-        foods.forEach(food -> {
-            if (items.contains(food.getId())) {
-                returnedFoods.add(food);
-            }
-        });
-
-        return returnedFoods;
-    }
-
-    public int getMaxComplexity() {
-        List<Food> foods = getFoodsByItemId();
-        int maxComplexity = 0;
-        for (Food food : foods) {
-            maxComplexity = Math.max(maxComplexity, food.getComplexity());
-        }
-
-        return maxComplexity;
-    }
-
     @SneakyThrows
     public void setFoodPrepared(Food item) {
         for (int itm : items) {
@@ -67,16 +44,30 @@ public class Order {
         }
     }
 
-    @SneakyThrows
-    public Food fetchUnpreparedFood() {
+    public List<Food> getDoableFoods(int rank) {
+        List<Food> list = new ArrayList<>();
+
         for (int item : items) {
-            int indx = items.indexOf(item);
-            if (!itemsDone[indx] && !itemsUsed[indx]) {
-                itemsUsed[indx] = true;
-                return KitchenService.getInstance().findItemById(item);
+            Food food = KitchenService.getInstance().findItemById(item);
+            int index = items.indexOf(item);
+            if (rank >= food.getComplexity() && !itemsDone[index] && !itemsUsed[index]) {
+                itemsUsed[index] = true;
+                list.add(food);
             }
         }
-        return null;
+
+        return list;
+    }
+
+    public boolean allItemsComplete() {
+        for (int item : items) {
+            int index = items.indexOf(item);
+            if (!itemsDone[index]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

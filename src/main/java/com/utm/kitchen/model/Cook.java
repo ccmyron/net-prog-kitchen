@@ -8,13 +8,7 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -40,28 +34,8 @@ public class Cook implements Runnable {
         this.semaphore = new Semaphore(1);
     }
 
-    public void returnOrder(Order order) {
-        this.isCooking = false;
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        RestTemplate restTemplate = new RestTemplate();
-        String url = "http://localhost:9090/distribution";
-
-        try {
-            URI uri = new URI(url);
-            HttpEntity<Order> requestEntity = new HttpEntity<>(order, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(uri, requestEntity, String.class);
-            log.info(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        this.orderTaken = null;
-    }
-
     @SneakyThrows
-    private void cook(Food food, CountDownLatch latch) {
+    private void cook(Order order, Food food) {
         Apparatus apparatus = null;
 
         synchronized (KitchenService.getInstance()) {
@@ -78,56 +52,37 @@ public class Cook implements Runnable {
             }
         }
 
+        log.info("preparing {}", food);
         TimeUnit.MILLISECONDS.sleep((long) food.getPrepTime() * Properties.TIME_UNIT);
+        order.setFoodPrepared(food);
+        log.info("done {}", food);
 
         if (apparatus != null) {
             apparatus.free();
         }
-
-        latch.countDown();
     }
 
     @SneakyThrows
     @Override
     public void run() {
-        Order foundOrder;
-
-        PriorityBlockingQueue<Order> orders = KitchenService.getInstance().getOrderList();
+        ExecutorService executorService = Executors.newFixedThreadPool(this.proficiency);
+        List<Order> activeOrders;
+        List<Food> doableFood;
 
         while (true) {
-            Order order = orders.take();
-            log.info("{} is preparing order with id {}", this.name, order.getId());
-            semaphore.acquire();
-            Food food = order.fetchUnpreparedFood();
-            semaphore.release();
-
-            ExecutorService executorService = Executors.newFixedThreadPool(proficiency);
-
-            CountDownLatch latch = new CountDownLatch(proficiency);
-
-            while (food != null) {
-                Food finalFood = food;
-                executorService.execute(() -> cook(finalFood, latch));
-                semaphore.acquire();
-                order.setFoodPrepared(food);
-                semaphore.release();
-                food = order.fetchUnpreparedFood();
+            activeOrders = KitchenService.getInstance().getHeadCook().getActiveOrders();
+            synchronized (activeOrders) {
+                for (Order order : activeOrders) {
+                    semaphore.acquire();
+                    doableFood = order.getDoableFoods(this.rank);
+                    semaphore.release();
+                    if (!doableFood.isEmpty()) {
+                        for (Food food : doableFood) {
+                            executorService.execute(() -> cook(order, food));
+                        }
+                    }
+                }
             }
-
-            latch.await();
-
-            foundOrder = order;
-
-            KitchenService.getInstance().setFinishedOrders(KitchenService.getInstance().getFinishedOrders() + 1);
-
-            Order finalFoundOrder = foundOrder;
-            returnOrder(finalFoundOrder);
-
-            KitchenService.getInstance().removeOrder(foundOrder);
-
-//            log.info(catchPhrase);
-//            System.out.println("Current = " + KitchenService.getInstance().getCurrentOrders());
-//            System.out.println("Finished = " + KitchenService.getInstance().getFinishedOrders());
         }
     }
 }

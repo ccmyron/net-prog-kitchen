@@ -4,10 +4,7 @@ import com.utm.kitchen.apparatus.Apparatus;
 import com.utm.kitchen.apparatus.ApparatusType;
 import com.utm.kitchen.apparatus.Oven;
 import com.utm.kitchen.apparatus.Stove;
-import com.utm.kitchen.model.Cook;
-import com.utm.kitchen.model.Food;
-import com.utm.kitchen.model.Menu;
-import com.utm.kitchen.model.Order;
+import com.utm.kitchen.model.*;
 import com.utm.kitchen.util.ApparatusGenerator;
 import com.utm.kitchen.util.CookGenerator;
 import com.utm.kitchen.util.OrderComparator;
@@ -32,6 +29,7 @@ public class KitchenService {
             new PriorityBlockingQueue<>(20, new OrderComparator());
     private final List<Apparatus> availableApparatuses =
             ApparatusGenerator.generateApparatus(Properties.STOVES, Properties.OVENS);
+    private final HeadCook headCook = new HeadCook();
     @Setter private int currentOrders = 0;
     @Setter private int finishedOrders = 0;
 
@@ -91,6 +89,7 @@ public class KitchenService {
 
     public void openKitchen() {
         isKitchenRunning = true;
+        new Thread(headCook).start();
         for (Cook cook : cooks) {
             Thread thread = new Thread(cook);
             thread.start();

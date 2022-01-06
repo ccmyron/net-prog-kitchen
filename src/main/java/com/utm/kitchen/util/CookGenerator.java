@@ -29,12 +29,12 @@ public class CookGenerator {
                 "Salamu alaykum",
                 false)
         );
-//        cooks.add(new Cook(3,
-//                4,
-//                "Alex Cornea",
-//                "ia spati",
-//                false)
-//        );
+        cooks.add(new Cook(3,
+                4,
+                "Alex Cornea",
+                "ia spati",
+                false)
+        );
 
         return cooks;
     }
